@@ -22,10 +22,12 @@ async def startup_event():
 async def chat(query: Query):
     doc_type = None
     query_text = query.query
-    if "(type:" in query_text:
+    if "(type:" in query_text.lower():
         parts = query_text.split("(type:")
         query_text = parts[0].strip()
         doc_type = parts[1].replace(")", "").strip()
+    elif "executive order" in query_text.lower():
+        doc_type = "Executive Order"
     try:
         response = generate_response(query_text, doc_type)
         return {"response": response}

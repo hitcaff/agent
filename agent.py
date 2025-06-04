@@ -21,10 +21,11 @@ def query_db(query, doc_type=None):
                 base_query += ' AND type = ?'
                 params.append(doc_type)
             if 'recent' in query.lower() or 'new' in query.lower():
-                base_query += ' AND publication_date >= ?'
-                params.append((datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'))
+                base_query += ' AND publication_date LIKE ?'
+                params.append('2024%')
             cursor.execute(base_query, params)
             results = cursor.fetchall()
+            logger.info(f"Query '{query}' with type '{doc_type}' returned {len(results)} documents")
             return [{'title': row[0], 'date': row[1], 'type': row[2], 'abstract': row[3]} for row in results]
     except Exception as e:
         logger.error(f'Database query failed: {e}')

@@ -11,35 +11,35 @@ co = cohere.Client(os.getenv('COHERE_API_KEY'))
 
 def query_db(query, doc_type=None):
     try:
-        with sqlite3.connect("federal_register.db") as conn:
+        with sqlite3.connect('federal_register.db') as conn:
             cursor = conn.cursor()
-            base_query = "SELECT title, publication_date, type, abstract FROM documents WHERE 1=1"
+            base_query = 'SELECT title, publication_date, type, abstract FROM documents WHERE 1=1'
             params = []
-            if doc_type and doc_type != "All":
-                base_query += " AND type = ?"
+            if doc_type and doc_type != 'All':
+                base_query += ' AND type = ?'
                 params.append(doc_type)
-            if "recent" in query.lower():
-                base_query += " AND publication_date >= ?"
-                params.append((datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
+            if 'recent' in query.lower():
+                base_query += ' AND publication_date >= ?'
+                params.append((datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
             cursor.execute(base_query, params)
             results = cursor.fetchall()
-            return [{"title": row[0], "date": row[1], "type": row[2], "abstract": row[3]} for row in results]
+            return [{'title': row[0], 'date': row[1], 'type': row[2], 'abstract': row[3]} for row in results]
     except Exception as e:
-        logger.error(f"Database query failed: {e}")
+        logger.error(f'Database query failed: {e}')
         return []
 
 def generate_response(query, doc_type=None):
     try:
         results = query_db(query, doc_type)
         if not results:
-            return "No documents found."
-        abstracts = [doc["abstract"] for doc in results]
-        cohere_response = co.summarize(text="\n".join(abstracts), length="medium")
-        response = f"Found documents:\n"
+            return 'No documents found.'
+        abstracts = [doc['abstract'] for doc in results]
+        cohere_response = co.summarize(text='\n'.join(abstracts), length='medium')
+        response = 'Found documents:\n'
         for doc in results:
-            response += f"- {doc['title']} ({doc['date']}, {doc['type']}): {doc['abstract']}\n"
-        response += f"\nSummary: {cohere_response.summary}"
+            response += f'- {doc["title"]} ({doc["date"]}, {doc["type"]}): {doc["abstract"]}\n'
+        response += f'\nSummary: {cohere_response.summary}'
         return response
     except Exception as e:
-        logger.error(f"Agent error: {e}")
-        return f"Agent error: {str(e)}"
+        logger.error(f'Agent error: {e}')
+        return f'Agent error: {str(e)}'

@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 co = cohere.Client(os.getenv('COHERE_API_KEY'))
 
 def query_db(query, doc_type=None):
-    """Query database for documents matching the query and type."""
     try:
         with sqlite3.connect('federal_register.db') as conn:
             cursor = conn.cursor()
@@ -32,7 +31,6 @@ def query_db(query, doc_type=None):
         return []
 
 def generate_response(query, doc_type=None):
-    """Generate response using database results and Cohere summarization."""
     try:
         results = query_db(query, doc_type)
         if not results:

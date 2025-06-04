@@ -1,6 +1,7 @@
 import aiohttp
 import sqlite3
 import json
+import requests
 import os
 from datetime import datetime, timedelta
 import asyncio

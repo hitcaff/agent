@@ -82,21 +82,17 @@ async def store_to_sqlite(data):
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS documents (
-                    document_number TEXT PRIMARY KEY,
-                    title TEXT,
-                    publication_date TEXT,
-                    type TEXT,
-                    abstract TEXT
-                )
-            """)
+            cursor.execute("CREATE TABLE IF NOT EXISTS documents (document_number TEXT PRIMARY KEY, title TEXT, publication_date TEXT, type TEXT, abstract TEXT)")
             for doc in data:
-                cursor.execute("""
-                    INSERT OR REPLACE INTO documents (document_number, title, publication_date, type, abstract)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (doc["document_number"], doc["title"], doc["publication_date"], doc["type"], doc["abstract"]))
+                cursor.execute("INSERT OR REPLACE INTO documents (document_number, title, publication_date, type, abstract) VALUES (?, ?, ?, ?, ?)", 
+                              (doc['document_number'], doc['title'], doc['publication_date'], doc['type'], doc['abstract']))
             conn.commit()
+            cursor.execute("SELECT COUNT(*) FROM documents")
+            count = cursor.fetchone()[0]
+            logger.info(f"Stored {count} documents in database")
+            cursor.execute("SELECT * FROM documents WHERE type = 'Executive Order' LIMIT 1")
+            sample = cursor.fetchone()
+            logger.info(f"Sample document: {sample}")
     except sqlite3.Error as e:
         logger.error(f"Database error: {e}")
 

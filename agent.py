@@ -3,7 +3,9 @@ import logging
 import cohere
 from datetime import datetime, timedelta
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,9 @@ def query_db(query, doc_type=None):
             if doc_type and doc_type != 'All':
                 base_query += ' AND type = ?'
                 params.append(doc_type)
-            if 'recent' in query.lower():
+            if 'recent' in query.lower() or 'new' in query.lower():
                 base_query += ' AND publication_date >= ?'
-                params.append((datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+                params.append((datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'))
             cursor.execute(base_query, params)
             results = cursor.fetchall()
             return [{'title': row[0], 'date': row[1], 'type': row[2], 'abstract': row[3]} for row in results]
@@ -33,7 +35,9 @@ def generate_response(query, doc_type=None):
         results = query_db(query, doc_type)
         if not results:
             return 'No documents found.'
-        abstracts = [doc['abstract'] for doc in results]
+        abstracts = [doc['abstract'] for doc in results if doc['abstract']]
+        if not abstracts:
+            return 'No summaries available for the found documents.'
         cohere_response = co.summarize(text='\n'.join(abstracts), length='medium')
         response = 'Found documents:\n'
         for doc in results:

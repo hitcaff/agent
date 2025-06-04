@@ -1,7 +1,6 @@
 import aiohttp
 import sqlite3
 import json
-import requests
 import os
 from datetime import datetime, timedelta
 import asyncio
@@ -25,9 +24,9 @@ MOCK_DATA = [
     },
     {
         "document_number": "2024-12346",
-        "title": "Proposed Rule on Workforce Development",
+        "title": "Executive Order on Workforce Development",
         "publication_date": "2024-05-15",
-        "type": "Proposed Rule",
+        "type": "Executive Order",
         "abstract": "Establishes new training programs for federal employees."
     }
 ]
@@ -47,7 +46,7 @@ async def download_data(start_date, end_date):
                 "publication_date_gte": start_date,
                 "publication_date_lte": end_date,
                 "per_page": 100,
-                "type": "Executive Order"
+                "conditions[type]": "EO"
             }
             async with session.get(API_URL, params=params) as response:
                 response.raise_for_status()
@@ -59,7 +58,8 @@ async def download_data(start_date, end_date):
                 if not results:
                     logger.warning("No Executive Order data from API, using mock data.")
                     return MOCK_DATA
-                logger.info(f"Downloaded {len(results)} Executive Order documents from API.")
+                types = [doc.get('type', 'Unknown') for doc in results]
+                logger.info(f"Downloaded {len(results)} documents from API: {', '.join(set(types))}")
                 return results
     except aiohttp.ClientError as e:
         logger.error(f"Error downloading data: {e}")
@@ -73,7 +73,7 @@ def process_data(raw_data):
             "title": doc.get("title", ""),
             "publication_date": doc.get("publication_date", ""),
             "type": doc.get("type", ""),
-            "abstract": doc.get("abstract", "")
+            "abstract": doc.get("abstract", "") or doc.get("summary", "")
         })
     processed_file = os.path.join(DATA_DIR, f"processed_{datetime.now().strftime('%Y%m%d')}.json")
     with open(processed_file, "w") as f:

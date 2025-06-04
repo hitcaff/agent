@@ -46,7 +46,8 @@ async def download_data(start_date, end_date):
             params = {
                 "publication_date_gte": start_date,
                 "publication_date_lte": end_date,
-                "per_page": 100
+                "per_page": 100,
+                "type": "Executive Order"
             }
             async with session.get(API_URL, params=params) as response:
                 response.raise_for_status()
@@ -56,8 +57,9 @@ async def download_data(start_date, end_date):
                     json.dump(raw_data, f)
                 results = raw_data.get("results", [])
                 if not results:
-                    logger.warning("No data from API, using mock data.")
+                    logger.warning("No Executive Order data from API, using mock data.")
                     return MOCK_DATA
+                logger.info(f"Downloaded {len(results)} Executive Order documents from API.")
                 return results
     except aiohttp.ClientError as e:
         logger.error(f"Error downloading data: {e}")
@@ -104,12 +106,12 @@ def clean_old_files():
             file_date = datetime.fromtimestamp(os.path.getmtime(file_path))
             if file_date < threshold:
                 os.remove(file_path)
-                logger.info(f"Deleted old file: {file_path}")
+                logger.info(f"Deleted file: {file_path}")
 
 async def run_pipeline():
     try:
         end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        start_date = "2024-01-01"
         raw_data = await download_data(start_date, end_date)
         if not raw_data:
             logger.error("No data downloaded.")

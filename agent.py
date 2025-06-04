@@ -26,7 +26,7 @@ def query_db(query, doc_type=None):
             cursor.execute(base_query, params)
             results = cursor.fetchall()
             logger.info(f"Query '{query}' with type '{doc_type}' returned {len(results)} documents")
-            return [{'title': row[0], 'date': row[1], 'type': row[2], 'abstract': row[3]} for row in results]
+            return [{'title': row[0], 'date': row[1], 'type': row[2], 'abstract': str(row[3])} for row in results]
     except Exception as e:
         logger.error(f'Database query failed: {e}')
         return []
@@ -36,9 +36,9 @@ def generate_response(query, doc_type=None):
         results = query_db(query, doc_type)
         if not results:
             return 'No documents found.'
-        abstracts = [doc['abstract'] for doc in results if doc['abstract']]
+        abstracts = [doc['abstract'] for doc in results if doc['abstract'] and doc['abstract'] != 'None']
         if not abstracts:
-            return 'No summaries available for the found documents.'
+            return 'No abstracts available for the found documents.'
         cohere_response = co.summarize(text='\n'.join(abstracts), length='medium')
         response = 'Found documents:\n'
         for doc in results:
